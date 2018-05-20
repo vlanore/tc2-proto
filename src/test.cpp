@@ -30,6 +30,8 @@ its terms.*/
 using namespace std;
 
 struct Component {
+    Component() = default;
+    Component(const Component&) = delete;
     virtual ~Component() = default;
 };
 
@@ -44,7 +46,7 @@ class AllocatedComponents {
 
     template <class C>
     struct ConcreteAllocatedMemory : public AllocatedMemory {
-        ConcreteAllocatedMemory(int nb) { data.reserve(nb); }
+        ConcreteAllocatedMemory(int nb) : data(nb) {}
         vector<C> data;
     };
 
@@ -74,7 +76,7 @@ AllocatedComponents allocate(int nb, Args... args) {
     AllocatedComponents alloc(nb);
     unique_ptr<CAM> data(new CAM(nb));
     for (int i = 0; i < nb; ++i) {
-        data->data.emplace_back(args...);
+        data->data.at(i) = C(args...);
         alloc.components.push_back(dynamic_cast<Component*>(&data->data.at(i)));
     }
     alloc.lifetime = {unique_ptr<AM>(dynamic_cast<AM*>(data.release()))};
@@ -83,7 +85,7 @@ AllocatedComponents allocate(int nb, Args... args) {
 
 struct MyCompo : public Component {
     int data;
-    MyCompo(int data) : data(data) {}
+    MyCompo(int data = 0) : data(data) {}
 };
 
 int main() {
