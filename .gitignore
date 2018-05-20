@@ -1,0 +1,8 @@
+*.o
+*.a
+*_bin
+*.gcov
+*.gcno
+*.gcda
+*.profraw
+tmp*
