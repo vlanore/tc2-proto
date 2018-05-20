@@ -33,43 +33,51 @@ struct Component {
     virtual ~Component() = default;
 };
 
-struct AllocatedMemory {
-    virtual ~AllocatedMemory() = default;
-};
+class AllocatedComponents {
+    struct AllocatedMemory {
+        virtual ~AllocatedMemory() = default;
+    };
 
-struct Lifetime {  // deallocates components when destroyed, moveable but non-copyable
-    unique_ptr<AllocatedMemory> data;
-};
+    struct Lifetime {  // deallocates components when destroyed, moveable but non-copyable
+        unique_ptr<AllocatedMemory> data;
+    };
 
-template <class C>
-struct ConcreteAllocatedMemory : public AllocatedMemory {
-    ConcreteAllocatedMemory(int nb) { data.reserve(nb); }
-    vector<C> data;
-};
+    template <class C>
+    struct ConcreteAllocatedMemory : public AllocatedMemory {
+        ConcreteAllocatedMemory(int nb) { data.reserve(nb); }
+        vector<C> data;
+    };
 
-struct AllocatedComponents {
-    AllocatedComponents(int nb) { components.reserve(nb); }
     Lifetime lifetime;
     vector<Component*> components;
+    AllocatedComponents(int nb) { components.reserve(nb); }
+
+    template <class C, class... Args>
+    friend AllocatedComponents allocate(int, Args...);
+
+  public:
     template <class C>
     C& at(int i) {
         return dynamic_cast<C&>(*components.at(i));
     }
+
     template <class C>
-    vector<C>& vec() {
+    const vector<C>& vec() const {
         return dynamic_cast<ConcreteAllocatedMemory<C>&>(*lifetime.data.get()).data;
     }
 };
 
 template <class C, class... Args>
 AllocatedComponents allocate(int nb, Args... args) {
+    using CAM = AllocatedComponents::ConcreteAllocatedMemory<C>;
+    using AM = AllocatedComponents::AllocatedMemory;
     AllocatedComponents alloc(nb);
-    unique_ptr<ConcreteAllocatedMemory<C>> data(new ConcreteAllocatedMemory<C>(nb));
+    unique_ptr<CAM> data(new CAM(nb));
     for (int i = 0; i < nb; ++i) {
         data->data.emplace_back(args...);
         alloc.components.push_back(dynamic_cast<Component*>(&data->data.at(i)));
     }
-    alloc.lifetime = {unique_ptr<AllocatedMemory>(dynamic_cast<AllocatedMemory*>(data.release()))};
+    alloc.lifetime = {unique_ptr<AM>(dynamic_cast<AM*>(data.release()))};
     return alloc;
 }
 
