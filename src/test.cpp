@@ -29,6 +29,18 @@ its terms.*/
 
 using namespace std;
 
+template <class C>
+class Container {
+    vector<C> data;
+
+  public:
+    Container(int size) : data(size) {}
+    C& at(int i) { return data.at(i); }
+    const C& at(int i) const { return data.at(i); }
+    typename vector<C>::iterator begin() { return data.begin(); }
+    typename vector<C>::iterator end() { return data.end(); }
+};
+
 struct Component {
     Component() = default;
     Component(const Component&) = delete;
@@ -47,7 +59,7 @@ class AllocatedComponents {
     template <class C>
     struct ConcreteAllocatedMemory : public AllocatedMemory {
         ConcreteAllocatedMemory(int nb) : data(nb) {}
-        vector<C> data;
+        Container<C> data;
     };
 
     Lifetime lifetime;
@@ -64,7 +76,7 @@ class AllocatedComponents {
     }
 
     template <class C>
-    const vector<C>& vec() const {
+    Container<C>& vec() {
         return dynamic_cast<ConcreteAllocatedMemory<C>&>(*lifetime.data.get()).data;
     }
 };
@@ -90,6 +102,9 @@ struct MyCompo : public Component {
 
 int main() {
     auto alloc = allocate<MyCompo>(5, 17);
+    for (auto&& e : alloc.vec<MyCompo>()) {
+        e.data = 13;
+    }
     alloc.at<MyCompo>(3).data = 19;
     for (auto&& e : alloc.vec<MyCompo>()) {
         cout << e.data << endl;
