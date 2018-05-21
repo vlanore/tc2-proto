@@ -23,17 +23,21 @@ the same conditions as regards security.
 The fact that you are presently reading this means that you have had knowledge of the CeCILL-B license and that you accept
 its terms.*/
 
-#include <iostream>  // for the test at the end
-#include "allocation.hpp"
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+
+#include <iostream>
+#include "doctest.h"
+
+#include "../src/allocation.hpp"
 
 using namespace std;
 
-struct MyCompo : public Component {
-    int data;
-    MyCompo(int data = 0) : data(data) {}
-};
+TEST_CASE("Basic allocation test.") {
+    struct MyCompo : public Component {
+        int data;
+        MyCompo(int data = 0) : data(data) {}
+    };
 
-int main() {
     Allocator<MyCompo> allocator;
     auto alloc = allocator.allocate(5, 17);
     for (auto&& e : alloc.vec<MyCompo>()) {
@@ -42,7 +46,8 @@ int main() {
     alloc.at<MyCompo>(3).data = 19;
     auto&& vec = alloc.vec<MyCompo>();
     vec[2] = 12;
-    for (auto&& e : alloc.vec<MyCompo>()) {
-        cout << e.data << endl;
+    vector<int> expected_result{13, 13, 12, 19, 13};
+    for (int i = 0; i < vec.size(); i++) {
+        CHECK(vec[i].data == expected_result[i]);
     }
 }

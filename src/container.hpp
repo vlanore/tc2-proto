@@ -37,6 +37,7 @@ class Container {
     const C& at(int i) const { return data.at(i); }
     C& operator[](int i) { return data[i]; }
     const C& operator[](int i) const { return data[i]; }
+    int size() const { return data.size(); }
     typename std::vector<C>::iterator begin() { return data.begin(); }
     typename std::vector<C>::iterator end() { return data.end(); }
 };
