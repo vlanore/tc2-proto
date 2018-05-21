@@ -23,23 +23,9 @@ the same conditions as regards security.
 The fact that you are presently reading this means that you have had knowledge of the CeCILL-B license and that you accept
 its terms.*/
 
-#include <iostream>  // for the test at the end
-#include "allocation.hpp"
-
-using namespace std;
-
-struct MyCompo : public Component {
-    int data;
-    MyCompo(int data = 0) : data(data) {}
+// class from which all components should inherit
+struct Component {
+    Component() = default;
+    Component(const Component&) = delete;
+    virtual ~Component() = default;
 };
-
-int main() {
-    auto alloc = allocate<MyCompo>(5, 17);
-    for (auto&& e : alloc.vec<MyCompo>()) {
-        e.data = 13;
-    }
-    alloc.at<MyCompo>(3).data = 19;
-    for (auto&& e : alloc.vec<MyCompo>()) {
-        cout << e.data << endl;
-    }
-}
