@@ -23,37 +23,24 @@ the same conditions as regards security.
 The fact that you are presently reading this means that you have had knowledge of the CeCILL-B license and that you accept
 its terms.*/
 
-#include <iostream>
-#include <memory>
-#include <vector>
+#include <iostream>  // for the test at the end
+#include <memory>    // for unique_ptr in AllocatedComponents
+#include <vector>    // for vector in AllocatedComponents
+#include "container.hpp"
 
 using namespace std;
 
-template <class C>
-class Container {
-    vector<C> data;
-
-  public:
-    Container(int size) : data(size) {}
-    C& at(int i) { return data.at(i); }
-    const C& at(int i) const { return data.at(i); }
-    typename vector<C>::iterator begin() { return data.begin(); }
-    typename vector<C>::iterator end() { return data.end(); }
-};
-
+// class from which all components should inherit
 struct Component {
     Component() = default;
     Component(const Component&) = delete;
     virtual ~Component() = default;
 };
 
+// class representing an array of already allocated components
 class AllocatedComponents {
     struct AllocatedMemory {
         virtual ~AllocatedMemory() = default;
-    };
-
-    struct Lifetime {  // deallocates components when destroyed, moveable but non-copyable
-        unique_ptr<AllocatedMemory> data;
     };
 
     template <class C>
@@ -62,10 +49,11 @@ class AllocatedComponents {
         Container<C> data;
     };
 
-    Lifetime lifetime;
+    unique_ptr<AllocatedMemory> lifetime;
     vector<Component*> components;
-    AllocatedComponents(int nb) { components.reserve(nb); }
 
+    // builder pattern with allocate function
+    AllocatedComponents(int nb) { components.reserve(nb); }
     template <class C, class... Args>
     friend AllocatedComponents allocate(int, Args...);
 
@@ -77,7 +65,7 @@ class AllocatedComponents {
 
     template <class C>
     Container<C>& vec() {
-        return dynamic_cast<ConcreteAllocatedMemory<C>&>(*lifetime.data.get()).data;
+        return dynamic_cast<ConcreteAllocatedMemory<C>&>(*lifetime.get()).data;
     }
 };
 
