@@ -23,9 +23,12 @@ the same conditions as regards security.
 The fact that you are presently reading this means that you have had knowledge of the CeCILL-B license and that you accept
 its terms.*/
 
+#include <string>
+
 // class from which all components should inherit
 struct Component {
     Component() = default;
     Component(const Component&) = delete;
     virtual ~Component() = default;
+    virtual std::string tc_debug() const { return ""; };
 };

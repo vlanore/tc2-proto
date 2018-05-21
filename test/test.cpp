@@ -24,9 +24,38 @@ The fact that you are presently reading this means that you have had knowledge o
 its terms.*/
 
 #include <iostream>
+#include <unordered_map>
 
 #include "../src/allocation.hpp"
 
 using namespace std;
 
-int main() { std::cout << "Hello\n"; }
+class Registrar {
+    unordered_map<string, AllocatedComponents> allocations;
+
+  public:
+    template <class C, class... Args>
+    void component(string name, Args... args) {
+        auto allocation = Allocator<C>::allocate(1, std::forward<Args>(args)...);
+        allocations.insert(make_pair(name, move(allocation)));
+    }
+
+    void print() {
+        for (auto&& entry : allocations) {
+            cout << "Component " << entry.first << ": " << entry.second.at<Component>(0).tc_debug() << endl;
+        }
+    }
+};
+
+struct MyCompo : Component {
+    int data;
+    MyCompo(int data = 0) : data(data) {}
+    string tc_debug() const final { return "MyCompo[" + to_string(data) + "]"; }
+};
+
+int main() {
+    Registrar r;
+    r.component<MyCompo>("c0", 3);
+    r.component<MyCompo>("c1", 9);
+    r.print();
+}
