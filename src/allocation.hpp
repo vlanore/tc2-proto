@@ -49,6 +49,8 @@ class AllocatedComponents {
     friend class Allocator;
 
   public:
+    int size() const { return components.size(); }
+
     template <class C>
     C& at(int i) {
         return dynamic_cast<C&>(*components.at(i));

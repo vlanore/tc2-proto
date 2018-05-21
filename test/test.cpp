@@ -36,13 +36,21 @@ class Registrar {
   public:
     template <class C, class... Args>
     void component(string name, Args... args) {
-        auto allocation = Allocator<C>::allocate(1, std::forward<Args>(args)...);
+        component_array<C>(name, 1, std::forward<Args>(args)...);
+    }
+
+    template <class C, class... Args>
+    void component_array(string name, int size, Args... args) {
+        auto allocation = Allocator<C>::allocate(size, std::forward<Args>(args)...);
         allocations.insert(make_pair(name, move(allocation)));
     }
 
     void print() {
         for (auto&& entry : allocations) {
-            cout << "Component " << entry.first << ": " << entry.second.at<Component>(0).tc_debug() << endl;
+            for (int i = 0; i < entry.second.size(); ++i) {
+                auto&& component = entry.second.at<Component>(i);
+                cout << "Allocation " << entry.first << "." << i << ": " << component.tc_debug() << endl;
+            }
         }
     }
 };
@@ -56,6 +64,6 @@ struct MyCompo : Component {
 int main() {
     Registrar r;
     r.component<MyCompo>("c0", 3);
-    r.component<MyCompo>("c1", 9);
+    r.component_array<MyCompo>("c1", 5, 9);
     r.print();
 }
