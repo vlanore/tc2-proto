@@ -34,11 +34,14 @@ struct MyCompo : public Component {
 };
 
 int main() {
-    auto alloc = allocate<MyCompo>(5, 17);
+    Allocator<MyCompo> allocator;
+    auto alloc = allocator.allocate(5, 17);
     for (auto&& e : alloc.vec<MyCompo>()) {
         e.data = 13;
     }
     alloc.at<MyCompo>(3).data = 19;
+    auto&& vec = alloc.vec<MyCompo>();
+    vec[2] = 12;
     for (auto&& e : alloc.vec<MyCompo>()) {
         cout << e.data << endl;
     }

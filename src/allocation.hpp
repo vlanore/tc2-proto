@@ -30,23 +30,23 @@ its terms.*/
 
 // class representing an array of already allocated components
 class AllocatedComponents {
-    struct AllocatedMemory {
-        virtual ~AllocatedMemory() = default;
+    struct ComponentContainer {
+        virtual ~ComponentContainer() = default;
     };
 
     template <class C>
-    struct ConcreteAllocatedMemory : public AllocatedMemory {
-        ConcreteAllocatedMemory(int nb) : data(nb) {}
+    struct ConcreteComponentContainer : public ComponentContainer {
+        ConcreteComponentContainer(int nb) : data(nb) {}
         Container<C> data;
     };
 
-    std::unique_ptr<AllocatedMemory> lifetime;
+    std::unique_ptr<ComponentContainer> lifetime;
     std::vector<Component*> components;
 
     // builder pattern with allocate function
     AllocatedComponents(int nb) { components.reserve(nb); }
-    template <class C, class... Args>
-    friend AllocatedComponents allocate(int, Args...);
+    template <class C>
+    friend class Allocator;
 
   public:
     template <class C>
@@ -55,21 +55,35 @@ class AllocatedComponents {
     }
 
     template <class C>
+    const C& at(int i) const {
+        return dynamic_cast<C&>(*components.at(i));
+    }
+
+    template <class C>
     Container<C>& vec() {
-        return dynamic_cast<ConcreteAllocatedMemory<C>&>(*lifetime.get()).data;
+        return dynamic_cast<ConcreteComponentContainer<C>&>(*lifetime.get()).data;
+    }
+
+    template <class C>
+    const Container<C>& vec() const {
+        return dynamic_cast<ConcreteComponentContainer<C>&>(*lifetime.get()).data;
     }
 };
 
-template <class C, class... Args>
-AllocatedComponents allocate(int nb, Args... args) {
-    using CAM = AllocatedComponents::ConcreteAllocatedMemory<C>;
-    using AM = AllocatedComponents::AllocatedMemory;
-    AllocatedComponents alloc(nb);
-    std::unique_ptr<CAM> data(new CAM(nb));
-    for (int i = 0; i < nb; ++i) {
-        data->data.at(i) = C(args...);
-        alloc.components.push_back(dynamic_cast<Component*>(&data->data.at(i)));
+template <class C>
+class Allocator {
+  public:
+    template <class... Args>
+    static AllocatedComponents allocate(int nb, Args... args) {
+        using CCC = AllocatedComponents::ConcreteComponentContainer<C>;
+        using ACC = AllocatedComponents::ComponentContainer;
+        AllocatedComponents alloc(nb);
+        std::unique_ptr<CCC> data(new CCC(nb));
+        for (int i = 0; i < nb; ++i) {
+            data->data.at(i) = C(args...);
+            alloc.components.push_back(dynamic_cast<Component*>(&data->data.at(i)));
+        }
+        alloc.lifetime = {std::unique_ptr<ACC>(dynamic_cast<ACC*>(data.release()))};
+        return alloc;
     }
-    alloc.lifetime = {std::unique_ptr<AM>(dynamic_cast<AM*>(data.release()))};
-    return alloc;
-}
+};
